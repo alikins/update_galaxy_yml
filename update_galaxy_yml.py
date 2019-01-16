@@ -43,8 +43,8 @@ def rev_major_version(data):
 
     # to preserve quoting...
     _OrigType = type(ver_str)
-    ver = semver.parse_version_info(ver_str)
-    new_ver_str = semver.bump_major(str(ver))
+    # ver = semver.parse_version_info(ver_str)
+    new_ver_str = semver.bump_major(ver_str)
 
     data['version'] = _OrigType(semver.parse_version_info(new_ver_str))
     return data
