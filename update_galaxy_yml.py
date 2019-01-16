@@ -38,15 +38,24 @@ def update_name(data):
     return data
 
 
-def rev_major_version(data):
+def rev_version(data, version_part='patch'):
     ver_str = data['version']
 
     # to preserve quoting...
     _OrigType = type(ver_str)
-    # ver = semver.parse_version_info(ver_str)
-    new_ver_str = semver.bump_major(ver_str)
+    ver_dict = semver.parse(ver_str)
+    log.debug('ver_dict: %s', ver_dict)
 
-    data['version'] = _OrigType(semver.parse_version_info(new_ver_str))
+    assert version_part in ('major', 'minor', 'patch')
+
+    ver_dict[version_part] = ver_dict[version_part] + 1
+    log.debug('ver_dict2: %s', ver_dict)
+
+    # log.debug('new_ver_str: %s', new_ver_str)
+    new_ver_str = semver.format_version(**ver_dict)
+    log.debug('new_ver_str: %s', new_ver_str)
+
+    data['version'] = _OrigType(new_ver_str)
     return data
 
 
@@ -62,7 +71,7 @@ def main():
 
         log.debug('b: %s', data['version'])
 
-        rev_major_version(data)
+        rev_version(data)
 
         log.debug('a: %s', data['version'])
 
