@@ -59,6 +59,26 @@ def rev_version(data, version_part='patch'):
     return data
 
 
+def keywords_to_tags(data):
+    keywords = data.get('keywords', None)
+    if not keywords:
+        return data
+
+    tags = data.get('tags', [])
+
+    for keyword in keywords:
+        # _OrigType = type(keyword)
+        log.debug('Changing keyword "%s" to tag "%s"', keyword, keyword)
+
+        if keyword not in tags:
+            tags.append(keyword)
+
+    data['tags'] = tags
+    del data['keywords']
+    log.debug('new tags: %s', tags)
+    return data
+
+
 def main():
     log.debug('sys.argv: %s', sys.argv)
     args = sys.argv[1:]
@@ -74,6 +94,8 @@ def main():
         rev_version(data)
 
         log.debug('a: %s', data['version'])
+
+        keywords_to_tags(data)
 
         ruamel.yaml.round_trip_dump(data, sys.stdout, block_seq_indent=2)
 
