@@ -29,10 +29,10 @@ if [ "${CURRENT_BRANCH}" != "${BRANCH}" ] ; then
 fi
 
 # migrate modules/ and module_utils under plugins/
-git ls-files --error-unmatch modules/
+git ls-files --error-unmatch modules/ 2>/dev/null
 HAS_MODULES=$?
 
-git ls-files --error-unmatch module_utils/
+git ls-files --error-unmatch module_utils/ 2>/dev/null
 HAS_MODULE_UTILS=$?
 
 
