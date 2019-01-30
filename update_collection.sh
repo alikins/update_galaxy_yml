@@ -1,5 +1,8 @@
 #!/bin/bash -x
 
+REMOTE=${REMOTE:-origin}
+BRANCH=${BRANCH:-master}
+
 ensure_plugins_dir()
 {
     # if no plugins/ dir, create it, add it, commit it
@@ -17,6 +20,13 @@ ensure_plugins_dir()
     git commit -m "adding plugins/ dir" plugins
 }
 
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "${CURRENT_BRANCH}" != "${BRANCH}" ] ; then
+    echo "This script defaults to pushing changes to origin master but you are on local branch ${CURRENT_BRANCH}"
+    echo "Use and 'ORIGIN=<Your remote here> BRANCH=${CURRENT_BRANCH} update_collection.sh'"
+    echo "to push to other remotes or branches"
+    exit 1
+fi
 
 # migrate modules/ and module_utils under plugins/
 git ls-files --error-unmatch modules/
@@ -46,4 +56,4 @@ VER=$(cat galaxy.yml | shyaml get-value version)
 
 git commit -v -a -m "rev to ${VER}"
 git tag "${VER}" -m "${VER}"
-git push --tags origin master
+git push --tags "${REMOTE}" "${BRANCH}"
