@@ -8,7 +8,7 @@ import os
 import sys
 
 import ruamel.yaml
-import semver
+import semantic_version
 
 log = logging.getLogger(__name__)
 
@@ -43,17 +43,54 @@ def rev_version(data, version_part='patch'):
 
     # to preserve quoting...
     _OrigType = type(ver_str)
-    ver_dict = semver.parse(ver_str)
-    log.debug('ver_dict: %s', ver_dict)
+    version = semantic_version.Version(ver_str)
+    version_just_v = semantic_version.Version('%s.%s.%s' % (version.major, version.minor, version.patch))
+
+    version2 = semantic_version.Version(ver_str)
+    # ver_dict = semver.parse(ver_str)
+    # log.debug('ver_dict: %s', ver_dict)
+    log.debug('version: %s', version)
+    log.debug('version sans prerelease and build: %s', version_just_v)
 
     assert version_part in ('major', 'minor', 'patch')
 
-    ver_dict[version_part] = ver_dict[version_part] + 1
-    log.debug('ver_dict2: %s', ver_dict)
+    old_build = version.build
+    old_pre = version.prerelease
+
+    # So we rev the version part, just rounding/truncating to existing ver
+    if old_build or old_pre:
+        version2 = version_just_v
+
+    if version_part == 'major':
+        version2 = version2.next_major()
+    elif version_part == 'minor':
+        version2 = version2.next_minor()
+    elif version_part == 'patch':
+        version2 = version2.next_patch()
+    else:
+        raise Exception('Unknown sem ver part "%s"' % version_part)
+
+    log.debug('version1: %s', version)
+    log.debug('version2: %s', version2)
+
+    # ver_dict[version_part] = ver_dict[version_part] + 1
+    # log.debug('ver_dict2: %s', ver_dict)
+    new_ver_str = str(version2)
+
+    log.debug('new_ver_str1: %s', new_ver_str)
+    log.debug('old_build: %s', old_build)
+    log.debug('old_pre: %s', old_pre)
+
+    # This is unusual, for test cases with build/prerelease info, we want to
+    # preserve that while revving versions, so re-append build/prerelease info
+    if old_pre:
+        new_ver_str = "%s-%s" % (new_ver_str, '.'.join(old_pre))
+    if old_build:
+        new_ver_str = "%s+%s" % (new_ver_str, '.'.join(old_build))
 
     # log.debug('new_ver_str: %s', new_ver_str)
-    new_ver_str = semver.format_version(**ver_dict)
-    log.debug('new_ver_str: %s', new_ver_str)
+    # new_ver_str = semver.format_version(**ver_dict)
+    log.debug('new_ver_str2: %s', new_ver_str)
 
     data['version'] = _OrigType(new_ver_str)
     return data
@@ -79,6 +116,26 @@ def keywords_to_tags(data):
     return data
 
 
+# Note: only supports deps list with just collection names, it doesn't support
+# or expects deps to include version inof like 'geerlingguy.ntp >=1.1.1'
+def dep_list_to_dep_dict(data):
+    deps = data.get('dependencies', None)
+    if not deps:
+        return data
+
+    deps_dict = {}
+
+    log.debug('updating dependecies from a list to a dict')
+    # whatever the RHS needs to be to signify no particular version required
+    no_ver_specified_rhs = '*'
+    for dep in deps:
+        deps_dict[dep] = no_ver_specified_rhs
+
+    data['dependencies'] = deps_dict
+    log.debug('new dependencies dict: %s', data['dependencies'])
+    return data
+
+
 def main():
     log.debug('sys.argv: %s', sys.argv)
     args = sys.argv[1:]
@@ -96,6 +153,8 @@ def main():
         log.debug('a: %s', data['version'])
 
         keywords_to_tags(data)
+
+        dep_list_to_dep_dict(data)
 
         ruamel.yaml.round_trip_dump(data, sys.stdout, block_seq_indent=2)
 

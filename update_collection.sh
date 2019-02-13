@@ -50,10 +50,12 @@ if [ $HAS_MODULE_UTILS -eq 0 ]; then
 fi
 
 (update_galaxy_yml galaxy.yml > galaxy.yml.new)
+# FIXME: if galaxy.yml.new is empty, exit
 cp galaxy.yml.new galaxy.yml
 
 VER=$(cat galaxy.yml | shyaml get-value version)
 
 git commit -v -a -m "rev to ${VER}"
+
 git tag "${VER}" -m "${VER}"
 git push --tags "${REMOTE}" "${BRANCH}"
