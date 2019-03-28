@@ -120,7 +120,7 @@ def keywords_to_tags(data):
 # or expects deps to include version inof like 'geerlingguy.ntp >=1.1.1'
 def dep_list_to_dep_dict(data):
     deps = data.get('dependencies', None)
-    if not deps:
+    if deps is None:
         return data
 
     deps_dict = {}
@@ -133,6 +133,21 @@ def dep_list_to_dep_dict(data):
 
     data['dependencies'] = deps_dict
     log.debug('new dependencies dict: %s', data['dependencies'])
+    return data
+
+
+def license_to_list(data):
+    license_ = data.get('license', None)
+
+    new_license_list = []
+
+    if isinstance(license_, list):
+        new_license_list = license_
+    else:
+        new_license_list = [license_]
+        log.debug("Converted 'license' (%s) to be a list (%s)", license_, new_license_list)
+
+    data['license'] = new_license_list
     return data
 
 
@@ -155,6 +170,8 @@ def main():
         keywords_to_tags(data)
 
         dep_list_to_dep_dict(data)
+
+        license_to_list(data)
 
         ruamel.yaml.round_trip_dump(data, sys.stdout, block_seq_indent=2)
 
