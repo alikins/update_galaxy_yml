@@ -4,7 +4,6 @@
 # pip install 'ruamel.yaml<0.15'
 
 import logging
-import os
 import sys
 
 import ruamel.yaml
@@ -121,6 +120,10 @@ def keywords_to_tags(data):
 def dep_list_to_dep_dict(data):
     deps = data.get('dependencies', None)
     if deps is None:
+        return data
+
+    # already migrated
+    if isinstance(deps, dict):
         return data
 
     deps_dict = {}
