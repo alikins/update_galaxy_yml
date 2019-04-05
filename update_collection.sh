@@ -10,9 +10,8 @@ ensure_plugins_dir()
         return
     fi
 
-    echo "Adding a plugins/ dir and __init__.py"
+    echo "Adding a plugins/ dir"
     mkdir plugins/
-    touch plugins/__init__.py
 
     echo "Adding plugins/ to git"
     git add plugins
@@ -20,10 +19,21 @@ ensure_plugins_dir()
     git commit -m "adding plugins/ dir" plugins
 }
 
+# __init__.py files in plugins/ is no longer needed
+rm_plugins_init_py()
+{
+    # Note: this assumes a git repo
+    find plugins/ -name '__init__.py' | xargs git rm
+
+    echo "Removing plugins/ __init__.py files"
+    git commit -m "Removing now unneeded __init__.py files in plugins/"
+}
+
+
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [ "${CURRENT_BRANCH}" != "${BRANCH}" ] ; then
     echo "This script defaults to pushing changes to origin master but you are on local branch ${CURRENT_BRANCH}"
-    echo "Use and 'ORIGIN=<Your remote here> BRANCH=${CURRENT_BRANCH} update_collection.sh'"
+    echo "Use and 'REMOTE=<Your remote here> BRANCH=${CURRENT_BRANCH} update_collection.sh'"
     echo "to push to other remotes or branches"
     exit 1
 fi
@@ -49,10 +59,15 @@ if [ $HAS_MODULE_UTILS -eq 0 ]; then
     git mv module_utils/ plugins/
 fi
 
+# remove any plugins __init__.py files
+rm_plugins_init_py
+
 (update_galaxy_yml galaxy.yml > galaxy.yml.new)
 # FIXME: if galaxy.yml.new is empty, exit
 cp galaxy.yml.new galaxy.yml
 
+# exit if any of this stuff errors
+set -e
 VER=$(cat galaxy.yml | shyaml get-value version)
 
 git commit -v -a -m "rev to ${VER}"
